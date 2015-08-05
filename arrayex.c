@@ -137,18 +137,27 @@ PHP_MINFO_FUNCTION(arrayex)
 }
 /* }}} */
 
+ZEND_FUNCTION(arrayex_fetch_mult_field)
+{
+
+
+
+}
+
 ZEND_FUNCTION(arrayex_fetch_field)
 {
     //定义参数 s 源数组 field 字段名
     zval *s;
     char *f;
     int f_len;
+    long i;
 
     //取得参数的值
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|s", &s, &f, &f_len) == FAILURE)
     {
         RETURN_FALSE;
     }
+    i = atol(f);
 
     //定义结果数组
     array_init(return_value);
@@ -156,6 +165,7 @@ ZEND_FUNCTION(arrayex_fetch_field)
     //遍历 源数组 查找 相关字段 并生成新数组
     zval **ppzval;
     zval **fzval;
+    zval *nfzval;
     for (zend_hash_internal_pointer_reset((*s).value.ht);
         zend_hash_has_more_elements((*s).value.ht) == SUCCESS;
         zend_hash_move_forward((*s).value.ht))
@@ -167,13 +177,18 @@ ZEND_FUNCTION(arrayex_fetch_field)
         }
         if (f_len)
         {
-            if (zend_hash_find((**ppzval).value.ht, f, f_len + 1, (void **) & fzval) == FAILURE)
+            if ((i > 0 ? 
+                zend_hash_index_find((**ppzval).value.ht, i, (void **) & fzval) : 
+                zend_hash_find((**ppzval).value.ht, f, f_len + 1, (void **) & fzval)) == FAILURE)
             {
                 continue;
             }
             else
             {
-                add_next_index_zval(return_value, *fzval);
+                MAKE_STD_ZVAL(nfzval);
+                *nfzval = **fzval;
+                zval_copy_ctor(nfzval);
+                add_next_index_zval(return_value, nfzval);
             }
         }
         else
